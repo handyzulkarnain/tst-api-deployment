@@ -1,0 +1,24 @@
+{
+  "product": [
+    {
+      "id": 1,
+      "name": "Sayur Bayam"
+    },
+    {
+      "id": 2,
+      "name": "Kentang"
+    },
+    {
+      "id": 3,
+      "name": "Cumi-cumi"
+    },
+    {
+      "id": 4,
+      "name": "Udang"
+    },
+    {
+      "id": 5,
+      "name": "Tomat"
+    }
+  ]
+}

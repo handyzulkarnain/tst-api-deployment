@@ -13,12 +13,16 @@ import time
 from typing import Dict
 import jwt
 
-with open("menu.json", "r") as read_file:
-    data = json.load(read_file)
+with open("product.json", "r") as read_file:
+    data_product = json.load(read_file)
+with open("wishlist.json", "r") as read_file:
+    data_wishlist = json.load(read_file)
+with open("cart.json", "r") as read_file:
+    data_cart = json.load(read_file)
 with open("users.json", "r") as read_users_file:
     data_users = json.load(read_users_file)
 
-app = FastAPI(title="Handy's FastAPI")
+app = FastAPI(title="API BosBuy: Wishlist & Cart")
 
 
 ############ AUTHENTICATIONS ############
@@ -102,61 +106,68 @@ async def login_user(username: str, password: str):
 async def root():
     return "Anda sedang berada di halaman awal. Silahkan tambahkan /docs pada akhir url."
 
-@app.get("/menu", dependencies=[Depends(BearerToken())])
-async def read_all_menu():
-    return data['menu']
+@app.get("/product", dependencies=[Depends(BearerToken())])
+async def see_all_product():
+    return data_product['product']
 
-@app.get("/menu/{item_id}", dependencies=[Depends(BearerToken())])
-async def read_menu(item_id: int):
-    for item_menu in data['menu']:
-        if (item_menu['id'] == item_id):
-            return item_menu
-    raise HTTPException(
-        status_code=404, detail="Item menu not found!"
-    )
+@app.get("/wishlist", dependencies=[Depends(BearerToken())])
+async def see_all_wishlist():
+    return data_wishlist['product']
 
-@app.post("/menu", dependencies=[Depends(BearerToken())])
-async def create_menu(name: str):
+# @app.get("/wishlist/{item_id}", dependencies=[Depends(BearerToken())])
+# async def see_wishlist(item_id: int):
+#     for item_wishlist in data_wishlist['product']:
+#         if (item_wishlist['id'] == item_id):
+#             return item_wishlist
+#     raise HTTPException(
+#         status_code=404, detail="Item wishlist not found!"
+#     )
+
+@app.post("/wishlist", dependencies=[Depends(BearerToken())])
+async def add_to_wishlist(id_product: int, quantity: int):
     id = 1
-    if (len(data['menu']) > 0):
+    if (len(data_wishlist['product']) > 0):
         # biar efisien kita perlu langsung nambahin ke element terakhir aja
-        idLastMember = data['menu'][len(data['menu'])-1]['id']
+        idLastMember = data_wishlist['product'][len(data_wishlist['product'])-1]['id']
         id = idLastMember + 1
-    new_data = {"id":id, "name":name}        
-    data['menu'].append(dict(new_data))
+    for (item_product) in data_product['product']:
+        if (item_product['id'] == id_product):
+            name = item_product['name']
+    new_data = {"id":id, "name":name, "quantity":quantity}        
+    data_wishlist['product'].append(dict(new_data))
     read_file.close()
-    with open("menu.json", "w") as write_file:
-        json.dump(data, write_file, indent=4)
+    with open("wishlist.json", "w") as write_file:
+        json.dump(data_wishlist, write_file, indent=4)
     write_file.close()
     return new_data
 
-@app.delete("/menu/{item_id}", dependencies=[Depends(BearerToken())])
-async def delete_menu(item_id: int):
+@app.delete("/wishlist/{item_id}", dependencies=[Depends(BearerToken())])
+async def remove_from_wishlist(item_id: int):
     index = 0
-    for item_menu in data['menu']:
+    for item_wishlist in data_wishlist['product']:
         index+=1
-        if (item_menu['id'] == item_id):
-            data['menu'].pop(index-1)
+        if (item_wishlist['id'] == item_id):
+            data_wishlist['product'].pop(index-1)
             read_file.close()
-            with open("menu.json", "w") as write_file:
-                json.dump(data, write_file, indent=4)
+            with open("wishlist.json", "w") as write_file:
+                json.dump(data_wishlist, write_file, indent=4)
             write_file.close()
             return {}
     raise HTTPException(
-        status_code=404, detail="Item menu not found!"
+        status_code=404, detail="Item wishlist not found!"
     )
 
-@app.put("/menu/{item_id}", dependencies=[Depends(BearerToken())])
-async def update_menu(item_id: int, item_name):
-    for item_menu in data['menu']:
-        if (item_menu['id'] == item_id):
-            item_menu['name'] = item_name
+@app.put("/wishlist/{item_id}", dependencies=[Depends(BearerToken())])
+async def edit_wishlist(item_id: int, quantity: int):
+    for item_wishlist in data_wishlist['product']:
+        if (item_wishlist['id'] == item_id):
+            item_wishlist['quantity'] = quantity
             read_file.close()
-            with open("menu.json", "w") as write_file:
-                json.dump(data, write_file, indent=4)
+            with open("wishlist.json", "w") as write_file:
+                json.dump(data_wishlist, write_file, indent=4)
             write_file.close()
-            return f'Updated menu for id:{item_id}'
+            return f'Updated wishlist for id:{item_id}'
     raise HTTPException(
-        status_code=404, detail="Item menu not found!"
+        status_code=404, detail="Item wishlist not found!"
     )
 ############ END OF FILE ############
