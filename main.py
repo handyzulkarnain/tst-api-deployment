@@ -1,6 +1,6 @@
 # Nama      : Handy Zulkarnain
 # NIM       : 18219060
-# Tanggal   : 16 Oktober 2021
+# Tanggal   : 19 November 2021
 
 ############ IMPORTS AND INITIAL CONFIGURE ############
 from fastapi import FastAPI, Request, Depends
@@ -100,28 +100,20 @@ async def login_user(username: str, password: str):
         status_code=500, detail="Wrong credentials!"
     )
 
+@app.get("/user/logininfo")
+async def get_login_info():
+    return {"username":'asdf', "password":'asdf'}
+
 
 ############ CRUD OPERATIONS ############
-@app.get("/")
-async def root():
-    return "Anda sedang berada di halaman awal. Silahkan tambahkan /docs pada akhir url."
-
 @app.get("/product", dependencies=[Depends(BearerToken())])
 async def see_all_product():
     return data_product['product']
 
+############ CRUD OPERATIONS: WISHLIST ############
 @app.get("/wishlist", dependencies=[Depends(BearerToken())])
 async def see_all_wishlist():
     return data_wishlist['product']
-
-# @app.get("/wishlist/{item_id}", dependencies=[Depends(BearerToken())])
-# async def see_wishlist(item_id: int):
-#     for item_wishlist in data_wishlist['product']:
-#         if (item_wishlist['id'] == item_id):
-#             return item_wishlist
-#     raise HTTPException(
-#         status_code=404, detail="Item wishlist not found!"
-#     )
 
 @app.post("/wishlist", dependencies=[Depends(BearerToken())])
 async def add_to_wishlist(id_product: int, quantity: int):
@@ -157,6 +149,15 @@ async def remove_from_wishlist(item_id: int):
         status_code=404, detail="Item wishlist not found!"
     )
 
+@app.delete("/wishlist", dependencies=[Depends(BearerToken())])
+async def remove_all_from_wishlist():
+    data_wishlist['product'] = []
+    read_file.close()
+    with open("wishlist.json", "w") as write_file:
+        json.dump(data_wishlist, write_file, indent=4)
+    write_file.close()
+    return {}
+
 @app.put("/wishlist/{item_id}", dependencies=[Depends(BearerToken())])
 async def edit_wishlist(item_id: int, quantity: int):
     for item_wishlist in data_wishlist['product']:
@@ -169,5 +170,68 @@ async def edit_wishlist(item_id: int, quantity: int):
             return f'Updated wishlist for id:{item_id}'
     raise HTTPException(
         status_code=404, detail="Item wishlist not found!"
+    )
+
+############ CRUD OPERATIONS: CART ############
+@app.get("/cart", dependencies=[Depends(BearerToken())])
+async def see_all_cart():
+    return data_cart['product']
+
+@app.post("/cart", dependencies=[Depends(BearerToken())])
+async def add_to_cart(id_product_wishlist: int):
+    id = 1
+    if (len(data_cart['product']) > 0):
+        # biar efisien kita perlu langsung nambahin ke element terakhir aja
+        idLastMember = data_cart['product'][len(data_cart['product'])-1]['id']
+        id = idLastMember + 1
+    for (item_wishlist) in data_wishlist['product']:
+        if (item_wishlist['id'] == id_product_wishlist):
+            name = item_wishlist['name']
+            quantity = item_wishlist['quantity']
+    new_data = {"id":id, "name":name, "quantity":quantity}        
+    data_cart['product'].append(dict(new_data))
+    read_file.close()
+    with open("cart.json", "w") as write_file:
+        json.dump(data_cart, write_file, indent=4)
+    write_file.close()
+    return new_data
+
+@app.delete("/cart/{item_id}", dependencies=[Depends(BearerToken())])
+async def remove_from_cart(item_id: int):
+    index = 0
+    for item_cart in data_cart['product']:
+        index+=1
+        if (item_cart['id'] == item_id):
+            data_cart['product'].pop(index-1)
+            read_file.close()
+            with open("cart.json", "w") as write_file:
+                json.dump(data_cart, write_file, indent=4)
+            write_file.close()
+            return {}
+    raise HTTPException(
+        status_code=404, detail="Item cart not found!"
+    )
+
+@app.delete("/cart", dependencies=[Depends(BearerToken())])
+async def remove_all_from_cart():
+    data_cart['product'] = []
+    read_file.close()
+    with open("cart.json", "w") as write_file:
+        json.dump(data_cart, write_file, indent=4)
+    write_file.close()
+    return {}
+
+@app.put("/cart/{item_id}", dependencies=[Depends(BearerToken())])
+async def edit_cart(item_id: int, quantity: int):
+    for item_cart in data_cart['product']:
+        if (item_cart['id'] == item_id):
+            item_cart['quantity'] = quantity
+            read_file.close()
+            with open("cart.json", "w") as write_file:
+                json.dump(data_cart, write_file, indent=4)
+            write_file.close()
+            return f'Updated cart for id:{item_id}'
+    raise HTTPException(
+        status_code=404, detail="Item cart not found!"
     )
 ############ END OF FILE ############
